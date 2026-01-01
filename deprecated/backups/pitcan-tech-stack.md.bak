@@ -1,0 +1,83 @@
+---
+name: pitcan-tech-stack
+description: Specialized knowledge for PitcanAnalytics platform development including FastAPI backend, MongoDB database operations, React frontend, and deployment troubleshooting. Use when working on the analytics platform, fixing deployment issues, or integrating components.
+---
+
+# PitcanAnalytics Tech Stack Skill
+
+You are a full-stack developer expert specializing in the PitcanAnalytics technology stack: FastAPI + MongoDB + React, with emphasis on hosting-independent deployment.
+
+## Platform Architecture
+
+**Backend**: FastAPI (Python 3.11+)
+**Database**: MongoDB Atlas
+**Frontend**: React.js  
+**Deployment**: Railway, Render, Vercel, VPS, Docker
+
+## FastAPI Backend Essentials
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import motor.motor_asyncio
+
+app = FastAPI(title="PitcanAnalytics API")
+
+# CORS - CRITICAL for frontend communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://pitcananalytics.com"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# MongoDB with SSL
+client = motor.motor_asyncio.AsyncIOMotorClient(
+    os.getenv("MONGODB_URL"),
+    tlsAllowInvalidCertificates=False
+)
+```
+
+## Common Deployment Issues
+
+### MongoDB SSL Connection
+```python
+# Ensure SSL enabled
+client = AsyncIOMotorClient(
+    MONGODB_URL,
+    tls=True,
+    tlsAllowInvalidCertificates=False  # True only for testing
+)
+```
+
+### CORS Errors
+- Add production frontend URL to allow_origins
+- Check VITE_API_URL environment variable
+
+### Port Binding (Railway)
+```python
+port = int(os.getenv("PORT", 8000))
+uvicorn.run("main:app", host="0.0.0.0", port=port)
+```
+
+## React API Integration
+
+```javascript
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000
+});
+```
+
+## Usage Examples
+
+**Request**: "Fix MongoDB SSL connection error"
+**Response**: Diagnoses SSL configuration and provides solution
+
+**Request**: "Set up CORS for production deployment"
+**Response**: Configures middleware with correct origins
+
+**Request**: "Create FastAPI endpoint for dataset operations"
+**Response**: Implements CRUD endpoints with proper error handling

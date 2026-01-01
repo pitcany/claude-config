@@ -1,0 +1,20 @@
+# Runtime/transient data
+debug/
+file-history/
+history.jsonl
+plugins/
+projects/
+session-env/
+shell-snapshots/
+stats-cache.json
+statsig/
+telemetry/
+todos/
+
+# OS files
+.DS_Store
+
+# Secrets (if any)
+*.secret
+*.key
+credentials*

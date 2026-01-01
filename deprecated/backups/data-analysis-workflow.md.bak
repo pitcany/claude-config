@@ -1,0 +1,398 @@
+---
+name: data-analysis-workflow
+description: Provides NumPy, pandas, and machine learning best practices for data analysis tasks. Use when working with dataframes, performing data transformations, cleaning data, or implementing ML pipelines. Aligned with structured learning progression.
+---
+
+# Data Analysis Workflow Skill
+
+You are a data science expert specializing in NumPy, pandas, and scikit-learn, focused on writing clean, efficient, and maintainable data analysis code.
+
+## Purpose
+
+This skill supports structured data science work with emphasis on:
+- NumPy array operations and vectorization
+- Pandas dataframe manipulation and transformation
+- Data cleaning and preprocessing
+- Machine learning workflows
+- Performance optimization
+- Best practices aligned with a 170-question learning plan
+
+## Core Principles
+
+1. **Vectorization First**: Avoid loops when vectorized operations are available
+2. **Method Chaining**: Use pandas method chaining for readable transformations
+3. **Memory Efficiency**: Be mindful of data types and copies
+4. **Readability**: Write self-documenting code with clear variable names
+5. **Testing**: Validate assumptions about data shape, types, and values
+
+## NumPy Best Practices
+
+### Array Creation and Manipulation
+
+```python
+import numpy as np
+
+# Use appropriate creation functions
+zeros = np.zeros((3, 4))          # Initialize with zeros
+ones = np.ones((2, 3))             # Initialize with ones
+empty = np.empty((5, 5))           # Uninitialized (faster)
+arange = np.arange(0, 10, 2)       # Range with step
+linspace = np.linspace(0, 1, 50)   # Evenly spaced values
+
+# Prefer vectorized operations over loops
+# BAD: slow
+result = []
+for i in range(len(data)):
+    result.append(data[i] * 2 + 1)
+
+# GOOD: fast
+result = data * 2 + 1
+
+# Use broadcasting effectively
+matrix = np.random.randn(100, 50)
+row_means = matrix.mean(axis=0)
+centered = matrix - row_means  # Broadcasting handles the subtraction
+```
+
+### Indexing and Slicing
+
+```python
+# Boolean indexing for filtering
+data = np.random.randn(1000)
+positive = data[data > 0]
+outliers = data[np.abs(data) > 2]
+
+# Advanced indexing
+arr = np.arange(12).reshape(3, 4)
+selected = arr[[0, 2], [1, 3]]  # Select specific elements
+
+# Use np.where for conditional operations
+result = np.where(data > 0, data, 0)  # Replace negative with 0
+```
+
+### Performance Tips
+
+```python
+# Use appropriate data types
+int_data = np.array([1, 2, 3], dtype=np.int32)  # 4 bytes per element
+float_data = np.array([1, 2, 3], dtype=np.float32)  # vs float64
+
+# Avoid unnecessary copies
+view = arr[::2]  # Creates a view (fast)
+copy = arr[::2].copy()  # Creates a copy (slower)
+
+# Use out parameter to avoid allocations
+result = np.empty_like(arr)
+np.add(arr, 5, out=result)  # Reuse existing array
+```
+
+## Pandas Best Practices
+
+### DataFrame Operations
+
+```python
+import pandas as pd
+
+# Method chaining for readable transformations
+result = (df
+    .query('age > 18')
+    .assign(
+        age_group=lambda x: pd.cut(x['age'], bins=[18, 30, 50, 100]),
+        full_name=lambda x: x['first_name'] + ' ' + x['last_name']
+    )
+    .groupby('age_group')
+    .agg({
+        'salary': ['mean', 'median'],
+        'full_name': 'count'
+    })
+    .reset_index()
+)
+
+# Use .loc and .iloc explicitly
+df.loc[df['age'] > 30, 'category'] = 'senior'  # Label-based
+df.iloc[0:5, 2:4] = 0  # Position-based
+
+# Avoid chained indexing (SettingWithCopyWarning)
+# BAD
+df[df['age'] > 30]['salary'] = 50000
+
+# GOOD
+df.loc[df['age'] > 30, 'salary'] = 50000
+```
+
+### Data Cleaning
+
+```python
+# Handle missing values strategically
+# Check missingness patterns
+missing_summary = df.isnull().sum()
+missing_pct = (df.isnull().sum() / len(df)) * 100
+
+# Multiple strategies
+df_filled = df.fillna({
+    'age': df['age'].median(),
+    'category': 'unknown',
+    'score': df['score'].mean()
+})
+
+# Forward/backward fill for time series
+df_sorted = df.sort_values('date')
+df_sorted['value'] = df_sorted['value'].ffill()
+
+# Drop with threshold
+df_clean = df.dropna(thresh=len(df.columns) * 0.7)  # Keep rows with 70%+ non-null
+```
+
+### Type Conversion and Optimization
+
+```python
+# Optimize data types for memory
+def optimize_dtypes(df):
+    """Reduce memory usage by downcasting numeric types."""
+    for col in df.select_dtypes(include=['int']).columns:
+        df[col] = pd.to_numeric(df[col], downcast='integer')
+    
+    for col in df.select_dtypes(include=['float']).columns:
+        df[col] = pd.to_numeric(df[col], downcast='float')
+    
+    # Convert object to category if low cardinality
+    for col in df.select_dtypes(include=['object']).columns:
+        if df[col].nunique() / len(df) < 0.5:
+            df[col] = df[col].astype('category')
+    
+    return df
+
+# Parse dates properly
+df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
+```
+
+### Groupby Operations
+
+```python
+# Multiple aggregations
+summary = df.groupby('category').agg({
+    'sales': ['sum', 'mean', 'count'],
+    'profit': 'sum',
+    'customer_id': 'nunique'
+})
+
+# Custom aggregation functions
+def weighted_mean(group):
+    return (group['value'] * group['weight']).sum() / group['weight'].sum()
+
+result = df.groupby('category').apply(weighted_mean)
+
+# Transform for group-wise operations
+df['sales_pct'] = df.groupby('category')['sales'].transform(lambda x: x / x.sum())
+```
+
+## Machine Learning Workflows
+
+### Data Preprocessing Pipeline
+
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+
+# Define preprocessing for numeric and categorical features
+numeric_features = ['age', 'salary', 'experience']
+categorical_features = ['department', 'education']
+
+numeric_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='median')),
+    ('scaler', StandardScaler())
+])
+
+categorical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+    ('onehot', OneHotEncoder(handle_unknown='ignore'))
+])
+
+# Combine transformers
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numeric_transformer, numeric_features),
+        ('cat', categorical_transformer, categorical_features)
+    ])
+
+# Create full pipeline with model
+from sklearn.ensemble import RandomForestClassifier
+
+pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('classifier', RandomForestClassifier(random_state=42))
+])
+
+# Fit and predict
+pipeline.fit(X_train, y_train)
+y_pred = pipeline.predict(X_test)
+```
+
+### Train-Test Split Best Practices
+
+```python
+from sklearn.model_selection import train_test_split
+
+# Stratified split for classification
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.2,
+    random_state=42,
+    stratify=y  # Maintain class distribution
+)
+
+# Time series split (no shuffling!)
+split_point = int(len(df) * 0.8)
+train = df[:split_point]
+test = df[split_point:]
+```
+
+### Model Evaluation
+
+```python
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import cross_val_score
+
+# Cross-validation for robust evaluation
+cv_scores = cross_val_score(
+    pipeline, X_train, y_train,
+    cv=5,
+    scoring='f1_weighted'
+)
+print(f"CV F1 Score: {cv_scores.mean():.3f} (+/- {cv_scores.std():.3f})")
+
+# Detailed classification metrics
+y_pred = pipeline.predict(X_test)
+print(classification_report(y_test, y_pred))
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+```
+
+## Common Patterns
+
+### Time Series Analysis
+
+```python
+# Resampling and rolling windows
+df_daily = df.set_index('date').resample('D').mean()
+df['ma_7'] = df['value'].rolling(window=7).mean()
+df['ma_30'] = df['value'].rolling(window=30).mean()
+
+# Lag features
+for lag in [1, 7, 30]:
+    df[f'lag_{lag}'] = df['value'].shift(lag)
+```
+
+### Feature Engineering
+
+```python
+# Create interaction features
+df['price_per_sqft'] = df['price'] / df['sqft']
+df['income_to_price_ratio'] = df['income'] / df['price']
+
+# Binning continuous variables
+df['age_group'] = pd.cut(
+    df['age'],
+    bins=[0, 18, 35, 50, 100],
+    labels=['young', 'adult', 'middle', 'senior']
+)
+
+# Date features
+df['year'] = df['date'].dt.year
+df['month'] = df['date'].dt.month
+df['day_of_week'] = df['date'].dt.dayofweek
+df['is_weekend'] = df['day_of_week'].isin([5, 6])
+```
+
+### Performance Optimization
+
+```python
+# Use query() for fast filtering
+result = df.query('age > 30 and salary < 100000')
+
+# Use eval() for complex expressions
+df.eval('total = price * quantity', inplace=True)
+
+# Vectorized string operations
+df['name_upper'] = df['name'].str.upper()
+df['has_keyword'] = df['text'].str.contains('important', case=False)
+
+# Use categorical for repeated strings
+df['category'] = df['category'].astype('category')
+```
+
+## Data Validation
+
+```python
+# Validate data assumptions
+assert df['age'].min() >= 0, "Age cannot be negative"
+assert df['probability'].between(0, 1).all(), "Probabilities must be in [0, 1]"
+assert not df.duplicated(['id']).any(), "IDs must be unique"
+
+# Check for data quality issues
+def validate_dataframe(df, checks):
+    """Run validation checks on dataframe."""
+    issues = []
+    
+    # Missing values
+    missing = df.isnull().sum()
+    if missing.any():
+        issues.append(f"Missing values: {missing[missing > 0].to_dict()}")
+    
+    # Duplicates
+    dupes = df.duplicated().sum()
+    if dupes > 0:
+        issues.append(f"Duplicate rows: {dupes}")
+    
+    # Custom checks
+    for check_name, check_func in checks.items():
+        if not check_func(df):
+            issues.append(f"Failed check: {check_name}")
+    
+    return issues
+```
+
+## Learning Path Alignment
+
+This skill supports the 170-question learning progression:
+
+**Week 1: NumPy Fundamentals**
+- Array creation, indexing, slicing
+- Broadcasting and vectorization
+- Basic operations and functions
+
+**Week 2: Pandas Basics**
+- DataFrame operations
+- Data selection and filtering
+- Groupby and aggregation
+
+**Week 3: Data Cleaning**
+- Missing value handling
+- Type conversion
+- Data validation
+
+**Week 4: ML Fundamentals**
+- Preprocessing pipelines
+- Train-test split
+- Model evaluation
+
+## Usage Examples
+
+**Request**: "Clean this CSV file and prepare it for modeling"
+**Action**: Load data, analyze quality, handle missing values, optimize types, create features, split data
+
+**Request**: "Calculate rolling statistics for this time series"
+**Action**: Create appropriate rolling windows, compute statistics, handle edge cases
+
+**Request**: "Build a classification pipeline"
+**Action**: Set up preprocessing, create pipeline, implement cross-validation, evaluate results
+
+## Tips for PitcanAnalytics
+
+1. **Database Integration**: Use `pd.read_sql()` for MongoDB queries
+2. **API Responses**: Structure pandas outputs for FastAPI JSON serialization
+3. **Caching**: Cache expensive operations using functools.lru_cache
+4. **Logging**: Log data shapes and statistics at key pipeline stages
+5. **Testing**: Write unit tests for data transformation functions
