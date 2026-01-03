@@ -122,7 +122,11 @@
     "document-skills@anthropic-agent-skills": true,
     "superpowers-chrome@superpowers-marketplace": true,
     "algorithmic-art@awesome-claude-skills": true,
-    "changelog-generator@awesome-claude-skills": true
+    "changelog-generator@awesome-claude-skills": true,
+    "scientific-skills@claude-scientific-skills": true,
+    "ai-ml-toolkit@claude-code-templates": true,
+    "documentation-generator@claude-code-templates": true,
+    "git-workflow@claude-code-templates": true
   },
   "alwaysThinkingEnabled": true
 }
